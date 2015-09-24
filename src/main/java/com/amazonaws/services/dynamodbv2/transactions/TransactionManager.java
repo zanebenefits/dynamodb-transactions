@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.amazonaws.services.dynamodbv2.datamodeling.AttributeTransformer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -84,6 +85,10 @@ public class TransactionManager {
     }
 
     public TransactionManager(AmazonDynamoDB client, String transactionTableName, String itemImageTableName, DynamoDBMapperConfig config) {
+        this(client, transactionTableName, itemImageTableName, config, null);
+    }
+
+    public TransactionManager(AmazonDynamoDB client, String transactionTableName, String itemImageTableName, DynamoDBMapperConfig config, AttributeTransformer attributeTransformer) {
         if(client == null) {
             throw new IllegalArgumentException("client must not be null");
         }
@@ -97,7 +102,12 @@ public class TransactionManager {
         this.transactionTableName = transactionTableName;
         this.itemImageTableName = itemImageTableName;
         this.facadeProxy = new ThreadLocalDynamoDBFacade();
-        this.clientMapper = new DynamoDBMapper(facadeProxy, config);
+        if (attributeTransformer == null) {
+            this.clientMapper = new DynamoDBMapper(facadeProxy, config);
+        }
+        else {
+            this.clientMapper = new DynamoDBMapper(facadeProxy, config, attributeTransformer);
+        }
     }
     
     protected List<KeySchemaElement> getTableSchema(String tableName) throws ResourceNotFoundException {
